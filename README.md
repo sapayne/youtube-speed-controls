@@ -8,8 +8,8 @@ allow for controls similiar to the Youtube Playback Speed Control extension befo
 Use your keyboard to speed up or slow down the youtube videos you are watching, or the number keys to skip through the video.
 
 ## Usage:
-- press <code>&#187;</code> (plus sign) to speed up the video.
-- press <code>&#189;</code> (minus sign) to slow down the video.
+- press <code>+</code> (plus sign) to speed up the video.
+- press <code>-</code> (minus sign) to slow down the video.
 - press <code>&#48;</code> to skip to the beginning of the video.
 - press <code>&#49;</code> to skip to the 10% length of the video.
 - press <code>&#50;</code> to skip to the 20% length of the video.
