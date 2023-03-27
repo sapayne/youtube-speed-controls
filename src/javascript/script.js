@@ -1,17 +1,12 @@
 /*global console */
 
-(function () {
-
+(function () 
+{
     "use strict";
 
-    var speedup = false,
-        KEYCODES = {
-            "SPACEBAR": 32,
-            "LEFT": 37,
-            "UP": 38,
-            "RIGHT": 39,
-            "DOWN": 40,
-            "SPEEDUP": 192
+    var KEYCODES = {
+            "Equal": 187,
+            "Minus": 189
         },
         SEEK_JUMP_KEYCODE_MAPPINGS = {
             // 0 to 9
@@ -38,103 +33,142 @@
             "105": 9
         };
 
-    function inputActive(currentElement) {
-        // If on an input or textarea
-        if (currentElement.tagName.toLowerCase() === "input" || currentElement.tagName.toLowerCase() === "textarea") {
-            return true;
-        } else {
-            return false;
-        }
+    // If on an input or textarea
+    function inputActive(currentElement) 
+    {
+        return currentElement.tagName.toLowerCase() === "input" 
+        || currentElement.tagName.toLowerCase() === "textarea" 
+        || currentElement.id.toLowerCase() === "contenteditable-root";
     }
 
+    var timer;
+
     // https://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
-    function fadeout(element, startOpacity) {
+    function fadeout(element, startOpacity) 
+    {
         var op = startOpacity; // initial opacity
-        var timer = setInterval(function () {
-            if (op <= 0.1) {
+        timer = setInterval(function () 
+        {
+            if (op <= 0.1) 
+            {
                 clearInterval(timer);
                 element.style.display = 'none';
             }
+            
             element.style.opacity = op;
             element.style.filter = 'alpha(opacity=' + op * 100 + ")";
-            op -= op * 0.1;
+            op -= 0.05;
         }, 50);
     }
-
-    function displayText(speed, boundingElement) {
-        var elementId = "youtube-extension-text-box",
-            HTML = '<div id="' + elementId + '">' + speed + 'x</div>',
+    
+    var elementId = "youtube-extension-text-box";
+    var opacity = 0.6;
+    
+    function displayText(speed, boundingElement) 
+    {
+        clearInterval(timer);
+        var HTML = '<div id="' + elementId + '">' + speed + 'x</div>',
             element = document.getElementById(elementId);
 
         // If the element doesn't exist, append it to the body
         // must check if it already exists
-        if (!element) {
+        if (!element) 
+        {
             boundingElement.insertAdjacentHTML('afterbegin', HTML);
             element = document.getElementById(elementId);
-        } else {
+        } 
+        else 
+        {
             element.innerHTML = speed + "x";
         }
 
         element.style.display = 'block';
-        element.style.opacity = 0.8;
-        element.style.filter = 'alpha(opacity=' + (0.8 * 100) + ")"
-        setTimeout(function () {
-            fadeout(element, 0.8);
-        }, 1500);
+        element.style.opacity = opacity;
 
+        switch(("" + speed).length)
+        {
+            case 1:
+                element.style.fontSize = '50px';
+                element.style.textIndent = '0px';
+                break;
+            
+            case 2:
+                element.style.fontSize = '45px';
+                element.style.textIndent = '-0.1em';
+                break;
+
+            case 3:
+                element.style.fontSize = '40px';
+                element.style.textIndent = '-0.2em';
+                break;
+            
+            case 4:
+                element.style.fontSize = '35px';
+                element.style.textIndent = '-0.35em';
+                break;
+
+            default:
+                element.style.fontSize = '30px';
+                element.style.textIndent = '-0.5em';
+        }
+
+        setTimeout(fadeout(element, opacity), 1000);
     }
 
-    window.onkeyup = function (e) {
-        var code = e.keyCode,
-            ctrlKey = e.ctrlKey,
-            video = document.getElementsByTagName("video")[0],
-            mediaElement = document.getElementById("movie_player"),
-            mediaElementChildren = mediaElement.getElementsByTagName("*"),
-            activeElement = document.activeElement,
-            i;
-
+    window.onkeyup = function (e) 
+    {
+        var activeElement = document.activeElement;
         // If an input/textarea element is active, don't go any further 
-        if (inputActive(activeElement)) {
+        if (inputActive(activeElement)) 
+        {
             return;
         }
 
+        var code = e.keyCode;
+
+        if(!(KEYCODES.Equal === code || KEYCODES.Minus === code || SEEK_JUMP_KEYCODE_MAPPINGS[code] !== undefined))
+        {
+            return;
+        }
+
+        var video = document.getElementsByTagName("video")[0],
+            mediaElement = document.getElementById("movie_player"),
+            mediaElementChildren = mediaElement.getElementsByTagName("*");
+
+        if(code == KEYCODES.Equal)
+        {
+            video.playbackRate += .25;
+            displayText(video.playbackRate, mediaElement);
+        }
+
         // Playback speeds
-        if (code === KEYCODES.SPEEDUP) {
-            speedup = !speedup;
-
-            if (speedup) {
-                video.playbackRate = 2;
-            } else {
-                video.playbackRate = 1;
-            }
-
-            // If ctrl is being pressed turn to x3 speed
-            if (ctrlKey) {
-                video.playbackRate = 3;
-                speedup = true;
-            }
-
+        if (code == KEYCODES.Minus) 
+        {
+            video.playbackRate = video.playbackRate <= 0.25 ? 0.25 : video.playbackRate - 0.25;
             displayText(video.playbackRate, mediaElement);
         }
 
         // Check if the media element, or any of it's children are active.
         // Else we'll be overwriting the previous actions.
-        for (i = 0; i < mediaElementChildren.length; i = i + 1) {
-            if (mediaElementChildren[i] === activeElement) {
+        for (var i = 0; i < mediaElementChildren.length; i++) 
+        {
+            if (mediaElementChildren[i] === activeElement) 
+            {
                 return;
             }
         }
 
         // Also check if it's the media element itself.
-        if (mediaElement === activeElement) {
+        if (mediaElement === activeElement) 
+        {
             return;
         }
 
         // If seek key
-        if (SEEK_JUMP_KEYCODE_MAPPINGS[code] !== undefined) {
+        if (SEEK_JUMP_KEYCODE_MAPPINGS[code] !== undefined) 
+        {
             video.currentTime = (SEEK_JUMP_KEYCODE_MAPPINGS[code] / 10) * video.duration;
         }
-
     };
 
 }());

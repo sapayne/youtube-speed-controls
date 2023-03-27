@@ -1,7 +1,7 @@
 #youtube-extension-text-box {
     position: absolute;
-
     margin: auto;
+
     top: 0;
     right: 0;
     bottom: 0;
@@ -10,13 +10,28 @@
     height: 60px;
 
     text-align: center;
-    vertical-align: middle;
-
-    border-radius: 20px;
+    border-radius: 50%;
+    line-height: 60px;
     padding: 30px;
-    font-size: 50px;
     background-color: #000;
-    color: #f3f3f3;
+    color: #d1d1d1;
     z-index: 99999999999999999;
-    opacity: 0.8;;
+
+    /*based on https://codepen.io/aliemir/pen/oPvwPw*/
+    -webkit-animation: grow 1s;
+    -webkit-animation-iteration-count: 1;
+}
+
+
+@-webkit-keyframes grow 
+{
+    0% 
+    {
+        -webkit-transform: scale( 0.6 );-moz-transform: scale( 0.6 );-o-transform: scale( 0.6 );-ms-transform: scale( 0.6 );transform: scale( 0.6 );
+    }
+     
+    100% 
+    {
+        -webkit-transform: scale( 1 );-moz-transform: scale( 1 );-o-transform: scale( 1 );-ms-transform: scale( 1 );transform: scale( 1 );
+    }
 }

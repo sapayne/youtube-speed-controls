@@ -1,9 +1,9 @@
 {
-    "manifest_version": 3,
-
-    "name": "YouTube Speed Controls",
-    "description": "Click ` (the grave accent key) to flick between normal and 2x speed, or ctrl + ` to play at 3x speed.",
-    "version": "1.2",
+    "name": "YouTube Playback Controller",
+    "version": "1.0",
+    "description": "Press + (plus) to speed up and - (minus) to slow down the video.",
+    "permissions": ["tabs"],
+    "host_permissions": ["https://*.youtube.com/*"],
     
     "content_scripts": [
         {
@@ -23,5 +23,7 @@
         "16": "src/images/icon16.png",
         "48": "src/images/icon48.png",
         "128": "src/images/icon128.png"
-    }
+    },
+
+    "manifest_version": 3
 }
