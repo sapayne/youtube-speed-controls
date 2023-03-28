@@ -1,7 +1,7 @@
 {
     "name": "YouTube Playback Controller",
     "version": "1.0",
-    "description": "Press + (plus) to speed up and - (minus) to slow down the video.",
+    "description": "Press + to speed up and - (minus) to slow down the video.",
     "permissions": ["tabs"],
     "host_permissions": ["https://*.youtube.com/*"],
     

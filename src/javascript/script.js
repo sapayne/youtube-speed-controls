@@ -38,15 +38,19 @@
     {
         return currentElement.tagName.toLowerCase() === "input" 
         || currentElement.tagName.toLowerCase() === "textarea" 
+        //  if the user is typing in the comment section, then don't change the speed of the video or skip through 
         || currentElement.id.toLowerCase() === "contenteditable-root";
     }
 
+    /*  global variable so the timer can be invalidated anywhere, and that way multiple displayText and 
+        fade out functions don't get overlaid on each other which causes a flickering effect.
+    */
     var timer;
 
     // https://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
     function fadeout(element, startOpacity) 
     {
-        var op = startOpacity; // initial opacity
+        var op = startOpacity;
         timer = setInterval(function () 
         {
             if (op <= 0.1) 
@@ -71,7 +75,6 @@
             element = document.getElementById(elementId);
 
         // If the element doesn't exist, append it to the body
-        // must check if it already exists
         if (!element) 
         {
             boundingElement.insertAdjacentHTML('afterbegin', HTML);
@@ -85,6 +88,7 @@
         element.style.display = 'block';
         element.style.opacity = opacity;
 
+        //  used to resize and center the speed up text depending on the number of sig figs in the numeric value
         switch(("" + speed).length)
         {
             case 1:
@@ -118,6 +122,7 @@
     window.onkeyup = function (e) 
     {
         var activeElement = document.activeElement;
+
         // If an input/textarea element is active, don't go any further 
         if (inputActive(activeElement)) 
         {
@@ -135,19 +140,6 @@
             mediaElement = document.getElementById("movie_player"),
             mediaElementChildren = mediaElement.getElementsByTagName("*");
 
-        if(code == KEYCODES.Equal)
-        {
-            video.playbackRate += .25;
-            displayText(video.playbackRate, mediaElement);
-        }
-
-        // Playback speeds
-        if (code == KEYCODES.Minus) 
-        {
-            video.playbackRate = video.playbackRate <= 0.25 ? 0.25 : video.playbackRate - 0.25;
-            displayText(video.playbackRate, mediaElement);
-        }
-
         // Check if the media element, or any of it's children are active.
         // Else we'll be overwriting the previous actions.
         for (var i = 0; i < mediaElementChildren.length; i++) 
@@ -162,6 +154,19 @@
         if (mediaElement === activeElement) 
         {
             return;
+        }
+        
+        if(code == KEYCODES.Equal)
+        {
+            video.playbackRate += .25;
+            displayText(video.playbackRate, mediaElement);
+        }
+
+        // Playback speeds
+        if (code == KEYCODES.Minus) 
+        {
+            video.playbackRate = video.playbackRate <= 0.25 ? 0.25 : video.playbackRate - 0.25;
+            displayText(video.playbackRate, mediaElement);
         }
 
         // If seek key
