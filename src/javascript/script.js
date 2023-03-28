@@ -140,6 +140,19 @@
             mediaElement = document.getElementById("movie_player"),
             mediaElementChildren = mediaElement.getElementsByTagName("*");
 
+        if(code == KEYCODES.Equal)
+        {
+            video.playbackRate += .25;
+            displayText(video.playbackRate, mediaElement);
+        }
+
+        // Playback speeds
+        if (code == KEYCODES.Minus) 
+        {
+            video.playbackRate = video.playbackRate <= 0.25 ? 0.25 : video.playbackRate - 0.25;
+            displayText(video.playbackRate, mediaElement);
+        }
+
         // Check if the media element, or any of it's children are active.
         // Else we'll be overwriting the previous actions.
         for (var i = 0; i < mediaElementChildren.length; i++) 
@@ -154,19 +167,6 @@
         if (mediaElement === activeElement) 
         {
             return;
-        }
-        
-        if(code == KEYCODES.Equal)
-        {
-            video.playbackRate += .25;
-            displayText(video.playbackRate, mediaElement);
-        }
-
-        // Playback speeds
-        if (code == KEYCODES.Minus) 
-        {
-            video.playbackRate = video.playbackRate <= 0.25 ? 0.25 : video.playbackRate - 0.25;
-            displayText(video.playbackRate, mediaElement);
         }
 
         // If seek key
