@@ -46,6 +46,7 @@
         fade out functions don't get overlaid on each other which causes a flickering effect.
     */
     var timer;
+    let YoutubeSpeed = "YoutubeSpeed";
 
     // https://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
     function fadeout(element, startOpacity) 
@@ -116,7 +117,38 @@
                 element.style.textIndent = '-0.5em';
         }
 
+        updatePlaySpeed(speed);
+
         setTimeout(fadeout(element, opacity), 1000);
+    }
+
+    const retrievePlaybackSpeed = () =>
+    {
+        return new Promise((resolve) => {
+            chrome.storage.sync.get([YoutubeSpeed], (obj) => {
+                resolve(obj[YoutubeSpeed] ? JSON.parse(obj[YoutubeSpeed]) : 1);
+            });
+        });
+    }
+
+    const updatePlaySpeed = async (speed) =>
+    {
+        //console.log("unload | playback speed: " + speed);
+
+        chrome.storage.sync.set({
+            [YoutubeSpeed]: JSON.stringify(speed)
+        });
+    }
+
+    window.onload = async () => 
+    {
+        //  load playback speed from storage and update video speed
+        let playbackSpeed = await retrievePlaybackSpeed();
+
+        document.getElementsByTagName("video")[0].playbackRate = playbackSpeed;
+        
+        //  So the user knows what the current playback speed is 
+        displayText(playbackSpeed, document.getElementById("movie_player"));
     }
 
     window.onkeyup = function (e) 
