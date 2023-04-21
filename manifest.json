@@ -3,12 +3,13 @@
     "version": "1.0",
     "description": "Press + to speed up and - (minus) to slow down the video.",
     "permissions": ["storage", "tabs"],
-    "host_permissions": ["https://*.youtube.com/*"],
+    "optional_host_permissions": ["https://*.youtube.com/*"],
     
     "content_scripts": [
         {
             "matches": [
-              "https://*.youtube.com/*"
+              "https://*.youtube.com/watch*",
+              "https://*.youtube.com/shorts*"
             ],
             "js": [
                 "src/javascript/script.js"

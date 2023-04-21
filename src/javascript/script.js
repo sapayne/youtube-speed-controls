@@ -40,13 +40,17 @@
         || currentElement.tagName.toLowerCase() === "textarea" 
         //  if the user is typing in the comment section, then don't change the speed of the video or skip through 
         || currentElement.id.toLowerCase() === "contenteditable-root";
-    }
+    };
 
     /*  global variable so the timer can be invalidated anywhere, and that way multiple displayText and 
         fade out functions don't get overlaid on each other which causes a flickering effect.
     */
     var timer;
     let YoutubeSpeed = "YoutubeSpeed";
+    var videoIndex;// = 0;
+    var videoID;// = "movie_player";
+    var HTMLPosition;// = 'afterbegin';
+    //let alreadyloaded = false;
 
     // https://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
     function fadeout(element, startOpacity) 
@@ -64,13 +68,15 @@
             element.style.filter = 'alpha(opacity=' + op * 100 + ")";
             op -= 0.05;
         }, 50);
-    }
+    };
     
-    var elementId = "youtube-extension-text-box";
+    const elementId = "youtube-extension-text-box";
     var opacity = 0.6;
     
     function displayText(speed, boundingElement) 
     {
+        if(!boundingElement) return false;
+
         clearInterval(timer);
         var HTML = '<div id="' + elementId + '">' + speed + 'x</div>',
             element = document.getElementById(elementId);
@@ -78,7 +84,7 @@
         // If the element doesn't exist, append it to the body
         if (!element) 
         {
-            boundingElement.insertAdjacentHTML('afterbegin', HTML);
+            boundingElement.insertAdjacentHTML(HTMLPosition, HTML);
             element = document.getElementById(elementId);
         } 
         else 
@@ -117,42 +123,141 @@
                 element.style.textIndent = '-0.5em';
         }
 
-        updatePlaySpeed(speed);
+        setPlaybackSpeed(speed);
 
         setTimeout(fadeout(element, opacity), 1000);
-    }
 
-    const retrievePlaybackSpeed = () =>
+        return true;
+    };
+
+    function getPlaybackSpeed()
     {
         return new Promise((resolve) => {
             chrome.storage.sync.get([YoutubeSpeed], (obj) => {
+                console.log("youtube playback speed: " + obj[YoutubeSpeed]);
                 resolve(obj[YoutubeSpeed] ? JSON.parse(obj[YoutubeSpeed]) : 1);
             });
         });
-    }
+    };
 
-    const updatePlaySpeed = async (speed) =>
+    function setPlaybackSpeed(speed)
     {
-        //console.log("unload | playback speed: " + speed);
+        playbackSpeed = speed;
 
         chrome.storage.sync.set({
             [YoutubeSpeed]: JSON.stringify(speed)
         });
+    };
+
+    const setupVideoSettings = () =>
+    {
+        return new Promise((resolve) => 
+        {
+            const url = window.location.href;
+
+            //if(document.getElementsByTagName("video").length ==  1)
+            if(url.includes("watch"))
+            {
+                //  regular video access
+                //videoIndex = 0;
+                //videoID = "movie_player";
+                resolve([0, "movie_player", 'afterbegin']);  
+            }
+
+            if(url.includes("shorts"))
+            {
+                let index = 0;
+                let ele = document.getElementsByTagName("video");
+
+                const indexTimer = setInterval(() =>
+                {
+                    if(ele)
+                    {
+                        clearInterval(indexTimer);
+                    }
+                }, 100);
+
+                for (let i of ele)
+                {
+                    if(i.hasAttribute("src"))
+                    {
+                        break;
+                    }
+                    index++;
+                }
+
+                //  shorts access
+                //videoIndex = 1;
+                //videoID = "player-container";
+                resolve([index, "shorts-container", 'beforebegin']);
+            }
+
+            resolve([]);
+        });
+    };
+
+    var playbackSpeed;
+
+    function setSpeedAndShow()
+    {
+        return new Promise((resolve) =>
+        {
+            const speedTimer = setInterval(() => 
+            {
+                if(videoIndex !== null && document.getElementsByTagName("video").length > videoIndex && videoID)
+                {
+                    //  So the user knows what the current playback speed is 
+                    if(displayText(playbackSpeed, document.getElementById(videoID)))
+                    {
+                        document.getElementsByTagName("video")[videoIndex].playbackRate = playbackSpeed;
+
+                        clearInterval(speedTimer);
+
+                        resolve();
+                    }
+                }
+            }, 100);  
+        });      
     }
 
-    window.onload = async () => 
+    async function init()
     {
         //  load playback speed from storage and update video speed
-        let playbackSpeed = await retrievePlaybackSpeed();
+        playbackSpeed = await getPlaybackSpeed();       
 
-        document.getElementsByTagName("video")[0].playbackRate = playbackSpeed;
-        
-        //  So the user knows what the current playback speed is 
-        displayText(playbackSpeed, document.getElementById("movie_player"));
+        [videoIndex, videoID, HTMLPosition] = await setupVideoSettings();
+
+        await setSpeedAndShow();
     }
 
-    window.onkeyup = function (e) 
+    //  for when first loading a youtube page
+    window.onload = async () =>
     {
+        console.log("on load.");
+        init();
+    };
+
+    //  for when changing between pages (shorts or regular videos)
+    window.addEventListener('yt-page-data-updated', () =>
+    {
+        //console.log('url change ' + window.location.href);
+
+        setPlaybackSpeed(playbackSpeed);
+
+        let element = document.getElementById(elementId);
+
+        if(element)
+        {
+            element.remove();
+        }
+
+        init();
+    });
+
+    window.onkeyup = (e) =>
+    {
+        if(videoIndex == null || !videoID) return;
+
         var activeElement = document.activeElement;
 
         // If an input/textarea element is active, don't go any further 
@@ -168,8 +273,8 @@
             return;
         }
 
-        var video = document.getElementsByTagName("video")[0],
-            mediaElement = document.getElementById("movie_player"),
+        var video = document.getElementsByTagName("video")[videoIndex],
+            mediaElement = document.getElementById(videoID),
             mediaElementChildren = mediaElement.getElementsByTagName("*");
 
         if(code == KEYCODES.Equal)
