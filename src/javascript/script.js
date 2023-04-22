@@ -47,10 +47,9 @@
     */
     var timer;
     let YoutubeSpeed = "YoutubeSpeed";
-    var videoIndex;// = 0;
-    var videoID;// = "movie_player";
+    var videoElemID;// = "movie_player";
     var HTMLPosition;// = 'afterbegin';
-    //let alreadyloaded = false;
+    var video;
 
     // https://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
     function fadeout(element, startOpacity) 
@@ -75,7 +74,7 @@
     
     function displayText(speed, boundingElement) 
     {
-        if(!boundingElement) return false;
+        if(!boundingElement) return;
 
         clearInterval(timer);
         var HTML = '<div id="' + elementId + '">' + speed + 'x</div>',
@@ -126,8 +125,6 @@
         setPlaybackSpeed(speed);
 
         setTimeout(fadeout(element, opacity), 1000);
-
-        return true;
     };
 
     function getPlaybackSpeed()
@@ -149,75 +146,74 @@
         });
     };
 
-    const setupVideoSettings = () =>
+    var playbackSpeed;
+
+    const waitForVideos = () =>
     {
-        return new Promise((resolve) => 
+        return new Promise((resolve) =>
+        {
+            let videoContainer = document.getElementsByTagName("video");
+
+            const speedTimer = setInterval(() => 
+            {
+                if(videoContainer.length > 0)
+                {
+                    clearInterval(speedTimer);
+
+                    resolve(videoContainer);
+                }
+            }, 50);
+        });
+    }
+
+    async function initValues()
+    {
+        return new Promise(async (resolve) =>
         {
             const url = window.location.href;
+            let index = 0;
+            /*  seems setInterval is an async function as the code was being skipped 
+                over and crashing at the video.playbackRate from being an object without
+                the playbackRate member variable.
+            */
+            let videoContainer = await waitForVideos();
 
-            //if(document.getElementsByTagName("video").length ==  1)
+            //  regular video access
             if(url.includes("watch"))
             {
-                //  regular video access
-                //videoIndex = 0;
-                //videoID = "movie_player";
-                resolve([0, "movie_player", 'afterbegin']);  
+                videoElemID = "movie_player";
+                HTMLPosition = "afterbegin";
             }
-
-            if(url.includes("shorts"))
+            //  shorts access
+            else if(url.includes("shorts"))
             {
-                let index = 0;
-                let ele = document.getElementsByTagName("video");
+                videoElemID = "shorts-container";
+                HTMLPosition = "beforebegin";
 
-                const indexTimer = setInterval(() =>
-                {
-                    if(ele)
-                    {
-                        clearInterval(indexTimer);
-                    }
-                }, 100);
-
-                for (let i of ele)
+                for (let i of videoContainer)
                 {
                     if(i.hasAttribute("src"))
                     {
                         break;
                     }
+
                     index++;
                 }
-
-                //  shorts access
-                //videoIndex = 1;
-                //videoID = "player-container";
-                resolve([index, "shorts-container", 'beforebegin']);
+            }
+            else
+            {
+                videoElemID = "";
+                resolve();
             }
 
-            resolve([]);
+            displayText(playbackSpeed, document.getElementById(videoElemID))
+            
+            video = videoContainer[index];
+
+            video.playbackRate = playbackSpeed;
+
+            resolve();
         });
-    };
-
-    var playbackSpeed;
-
-    function setSpeedAndShow()
-    {
-        return new Promise((resolve) =>
-        {
-            const speedTimer = setInterval(() => 
-            {
-                if(videoIndex !== null && document.getElementsByTagName("video").length > videoIndex && videoID)
-                {
-                    //  So the user knows what the current playback speed is 
-                    if(displayText(playbackSpeed, document.getElementById(videoID)))
-                    {
-                        document.getElementsByTagName("video")[videoIndex].playbackRate = playbackSpeed;
-
-                        clearInterval(speedTimer);
-
-                        resolve();
-                    }
-                }
-            }, 100);  
-        });      
     }
 
     async function init()
@@ -225,23 +221,19 @@
         //  load playback speed from storage and update video speed
         playbackSpeed = await getPlaybackSpeed();       
 
-        [videoIndex, videoID, HTMLPosition] = await setupVideoSettings();
-
-        await setSpeedAndShow();
+        await initValues();
     }
 
     //  for when first loading a youtube page
     window.onload = async () =>
     {
-        console.log("on load.");
+        //console.log("on load.");
         init();
     };
 
     //  for when changing between pages (shorts or regular videos)
     window.addEventListener('yt-page-data-updated', () =>
     {
-        //console.log('url change ' + window.location.href);
-
         setPlaybackSpeed(playbackSpeed);
 
         let element = document.getElementById(elementId);
@@ -256,9 +248,13 @@
 
     window.onkeyup = (e) =>
     {
-        if(videoIndex == null || !videoID) return;
+        //  setting video to null doesn't work so instead we set the videoElemID to an empty string in the initValues else code block
+        if(!videoElemID)
+        {
+            return;
+        }
 
-        var activeElement = document.activeElement;
+        let activeElement = document.activeElement;
 
         // If an input/textarea element is active, don't go any further 
         if (inputActive(activeElement)) 
@@ -266,15 +262,14 @@
             return;
         }
 
-        var code = e.keyCode;
+        let code = e.keyCode;
 
         if(!(KEYCODES.Equal === code || KEYCODES.Minus === code || SEEK_JUMP_KEYCODE_MAPPINGS[code] !== undefined))
         {
             return;
         }
 
-        var video = document.getElementsByTagName("video")[videoIndex],
-            mediaElement = document.getElementById(videoID),
+        let mediaElement = document.getElementById(videoElemID),
             mediaElementChildren = mediaElement.getElementsByTagName("*");
 
         if(code == KEYCODES.Equal)
@@ -286,7 +281,7 @@
         // Playback speeds
         if (code == KEYCODES.Minus) 
         {
-            video.playbackRate = video.playbackRate <= 0.25 ? 0.25 : video.playbackRate - 0.25;
+            video.playbackRate = playbackSpeed <= 0.25 ? 0.25 : playbackSpeed - 0.25;
             displayText(video.playbackRate, mediaElement);
         }
 

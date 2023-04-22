@@ -8,8 +8,7 @@
     "content_scripts": [
         {
             "matches": [
-              "https://*.youtube.com/watch*",
-              "https://*.youtube.com/shorts*"
+              "https://*.youtube.com/*"
             ],
             "js": [
                 "src/javascript/script.js"
