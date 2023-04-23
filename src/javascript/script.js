@@ -131,7 +131,7 @@
     {
         return new Promise((resolve) => {
             chrome.storage.sync.get([YoutubeSpeed], (obj) => {
-                console.log("youtube playback speed: " + obj[YoutubeSpeed]);
+                //console.log("youtube playback speed: " + obj[YoutubeSpeed]);
                 resolve(obj[YoutubeSpeed] ? JSON.parse(obj[YoutubeSpeed]) : 1);
             });
         });
